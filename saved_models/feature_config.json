@@ -1,0 +1,28 @@
+{
+    "text_features": "TF-IDF (1,2-grams, sublinear_tf)",
+    "vocabulary_size": 5000,
+    "numerical_feature_count": 16,
+    "numerical_features": [
+        "urls_found",
+        "suspicious_urls",
+        "http_urls",
+        "https_urls",
+        "ip_based_urls",
+        "shortened_urls",
+        "has_at_symbol_urls",
+        "suspicious_keyword_count",
+        "word_count",
+        "sentence_count",
+        "avg_word_length",
+        "uppercase_ratio",
+        "subject_urgency",
+        "domain_suspicious",
+        "exclamation_count",
+        "dollar_count"
+    ],
+    "primary_model_type": "Logistic Regression (L2 regularized)",
+    "comparator_model_type": "Random Forest Classifier (120 estimators)",
+    "train_samples": 2000,
+    "test_samples": 500,
+    "total_samples": 2500
+}

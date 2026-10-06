@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}Email Threat Analysis Studio // SentinelMail{% endblock %}
+{% block page_title %}Email Threat Analysis Studio{% endblock %}
+{% block page_subtitle %}Deep NLP Inspection, Static URL Triage & Heuristic Risk Engine{% endblock %}
+
+{% block content %}
+<div style="display: grid; grid-template-columns: 1.1fr 1fr; gap: 24px; align-items: start;">
+    <!-- Left Column: Input Form & Sample Loader -->
+    <div class="soc-card">
+        <div class="card-header">
+            <div class="card-header-title">
+                <i class="fa-solid fa-envelope-circle-check"></i>
+                Input Email Payload
+            </div>
+            <!-- Quick Pre-loaded Samples Selector -->
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase;">Quick Test:</span>
+                <select id="sampleEmailSelect" class="form-control" style="width: auto; padding: 4px 10px; font-size: 0.78rem;">
+                    <option value="">-- Load Scenario Template --</option>
+                    <option value="phish_paypal">⚠ Phishing: PayPal Account Suspension</option>
+                    <option value="phish_o365">⚠ Phishing: Office 365 Password Expiry</option>
+                    <option value="phish_customs">⚠ Phishing: Package Customs Fee Scam</option>
+                    <option value="phish_invoice">⚠ Phishing: Overdue Wire Invoice Dispute</option>
+                    <option value="safe_sprint">✓ Safe: Team Sprint Planning & Jira</option>
+                    <option value="safe_receipt">✓ Safe: Monthly SaaS Subscription Receipt</option>
+                    <option value="safe_zoom">✓ Safe: Zoom Calendar Invitation</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <form id="emailAnalyzeForm" method="POST" action="{{ url_for('analyze') }}">
+                <div class="form-group">
+                    <label class="form-label" for="sender">
+                        <i class="fa-regular fa-paper-plane" style="margin-right: 6px;"></i>Sender Email / Address
+                    </label>
+                    <input type="text" id="sender" name="sender" class="form-control" placeholder="e.g. support@example.com or IT-Desk <help@company.com>" value="{{ form_data.sender if form_data else '' }}">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="subject">
+                        <i class="fa-solid fa-heading" style="margin-right: 6px;"></i>Subject Line
+                    </label>
+                    <input type="text" id="subject" name="subject" class="form-control" placeholder="e.g. Urgent: Verify Your Account" value="{{ form_data.subject if form_data else '' }}">
+                </div>
+
+                <div class="form-group">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <label class="form-label" for="body" style="margin-bottom: 0;">
+                            <i class="fa-solid fa-align-left" style="margin-right: 6px;"></i>Email Body Content
+                        </label>
+                        <span id="charCount" style="font-size: 0.72rem; color: var(--text-dim);">0 chars</span>
+                    </div>
+                    <textarea id="body" name="body" class="form-control" rows="9" placeholder="Paste the complete raw or rendered email text content here..." required>{{ form_data.body if form_data else '' }}</textarea>
+                </div>
+
+                <div style="display: flex; gap: 12px; margin-top: 24px;">
+                    <button type="submit" id="btnAnalyze" class="btn btn-primary btn-lg" style="flex: 1;">
+                        <i class="fa-solid fa-shield-virus"></i>
+                        <span>ANALYZE EMAIL</span>
+                    </button>
+                    <button type="button" id="btnClear" class="btn btn-secondary" title="Clear form">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Right Column: Interactive Prediction Results -->
+    <div id="resultsContainer">
+        {% if result %}
+            <!-- Results View rendered from POST or API -->
+            {% include "_analysis_result_card.html" %}
+        {% else %}
+            <!-- Initial Empty State -->
+            <div class="soc-card" style="text-align: center; padding: 60px 30px;">
+                <div style="width: 72px; height: 72px; border-radius: 50%; background-color: var(--bg-surface-elevated); margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; font-size: 2rem; color: var(--text-dim); border: 1px dashed var(--border-color);">
+                    <i class="fa-solid fa-radar"></i>
+                </div>
+                <h3 style="font-size: 1.15rem; color: #fff; font-weight: 700;">Awaiting Email Payload</h3>
+                <p style="font-size: 0.85rem; color: var(--text-muted); max-width: 380px; margin: 10px auto 20px;">
+                    Enter the sender, subject, and email body on the left or select a pre-configured SOC scenario, then click <strong>Analyze Email</strong> to perform real-time triage.
+                </p>
+                <div style="display: inline-flex; gap: 12px; flex-wrap: wrap; justify-content: center;">
+                    <button type="button" class="btn btn-outline btn-sm" onclick="loadSample('phish_paypal')">
+                        <i class="fa-solid fa-bolt" style="color: #ef4444;"></i> Phishing Scenario
+                    </button>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="loadSample('safe_sprint')">
+                        <i class="fa-solid fa-bolt" style="color: #10b981;"></i> Safe Scenario
+                    </button>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/analyzer.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analyst Authentication // SentinelMail SOC</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="login-body">
+    <div class="login-card">
+        <div class="login-header">
+            <div class="login-logo">
+                <i class="fa-solid fa-shield-virus"></i>
+            </div>
+            <h2 style="font-size: 1.35rem; font-weight: 700; color: #fff;">SENTINEL MAIL</h2>
+            <p style="font-size: 0.8rem; color: var(--text-dim); margin-top: 4px; text-transform: uppercase; letter-spacing: 1px;">
+                Security Operations Center Gateway
+            </p>
+        </div>
+
+        <div style="padding: 28px 32px 32px;">
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert-box alert-{{ category }}" style="margin-bottom: 20px;">
+                            <span><i class="fa-solid fa-triangle-exclamation" style="margin-right: 6px;"></i>{{ message }}</span>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <!-- Quick Demo Credentials Box -->
+            <div class="demo-account-banner">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <strong style="color: #fff; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                        <i class="fa-solid fa-key" style="color: var(--accent-cyan); margin-right: 6px;"></i>Demo Administrator
+                    </strong>
+                    <button type="button" id="btnFillDemo" class="btn btn-outline btn-sm" style="padding: 2px 8px; font-size: 0.7rem; border-color: rgba(6, 182, 212, 0.4); color: var(--accent-cyan);">
+                        Auto-Fill
+                    </button>
+                </div>
+                <div>User: <code>admin</code></div>
+                <div>Pass: <code>Admin@123</code></div>
+            </div>
+
+            <form method="POST" action="{{ url_for('login') }}">
+                <div class="form-group">
+                    <label class="form-label" for="username">
+                        <i class="fa-regular fa-user" style="margin-right: 6px;"></i>Username or Email
+                    </label>
+                    <input type="text" id="username" name="username" class="form-control" placeholder="admin or analyst@security.local" required autocomplete="username">
+                </div>
+
+                <div class="form-group">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <label class="form-label" for="password" style="margin-bottom: 0;">
+                            <i class="fa-solid fa-lock" style="margin-right: 6px;"></i>Security Password
+                        </label>
+                        <button type="button" id="togglePassword" style="background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 0.75rem;">
+                            <i class="fa-regular fa-eye"></i> Show
+                        </button>
+                    </div>
+                    <input type="password" id="password" name="password" class="form-control" placeholder="••••••••••••" required autocomplete="current-password">
+                </div>
+
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: var(--text-muted); cursor: pointer;">
+                        <input type="checkbox" name="remember" value="1" style="accent-color: var(--accent-cyan);">
+                        Remember this terminal
+                    </label>
+                    <span style="font-size: 0.75rem; color: var(--text-dim);">AES-256 Hashed</span>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; font-size: 0.95rem;">
+                    <i class="fa-solid fa-right-to-bracket"></i>
+                    AUTHENTICATE ANALYST
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Auto-fill demo credentials
+        document.getElementById('btnFillDemo').addEventListener('click', function() {
+            document.getElementById('username').value = 'admin';
+            document.getElementById('password').value = 'Admin@123';
+        });
+
+        // Toggle password visibility
+        const toggleBtn = document.getElementById('togglePassword');
+        const passInput = document.getElementById('password');
+        toggleBtn.addEventListener('click', function() {
+            if (passInput.type === 'password') {
+                passInput.type = 'text';
+                toggleBtn.innerHTML = '<i class="fa-regular fa-eye-slash"></i> Hide';
+            } else {
+                passInput.type = 'password';
+                toggleBtn.innerHTML = '<i class="fa-regular fa-eye"></i> Show';
+            }
+        });
+    </script>
+</body>
+</html>

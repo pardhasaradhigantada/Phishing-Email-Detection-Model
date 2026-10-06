@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}SentinelMail // SOC Threat Intelligence{% endblock %}</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Main SOC Stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar" id="appSidebar">
+            <div class="sidebar-header">
+                <div class="brand-icon">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <div class="brand-title">
+                    SENTINEL MAIL
+                    <span>Threat Intelligence</span>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="nav-section-title">Operations</div>
+                <a href="{{ url_for('dashboard') }}" class="nav-item {% if request.endpoint == 'dashboard' %}active{% endif %}">
+                    <i class="fa-solid fa-chart-pie"></i>
+                    <span>SOC Dashboard</span>
+                </a>
+                <a href="{{ url_for('analyze') }}" class="nav-item {% if request.endpoint == 'analyze' %}active{% endif %}">
+                    <i class="fa-solid fa-magnifying-glass-arrow-right"></i>
+                    <span>Analyze Email</span>
+                </a>
+                <a href="{{ url_for('history') }}" class="nav-item {% if request.endpoint == 'history' %}active{% endif %}">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                    <span>Telemetry Log</span>
+                </a>
+
+                <div class="nav-section-title" style="margin-top: 12px;">Machine Learning</div>
+                <a href="{{ url_for('model_info') }}" class="nav-item {% if request.endpoint == 'model_info' %}active{% endif %}">
+                    <i class="fa-solid fa-brain"></i>
+                    <span>Model Metrics</span>
+                </a>
+                <a href="{{ url_for('dataset') }}" class="nav-item {% if request.endpoint == 'dataset' %}active{% endif %}">
+                    <i class="fa-solid fa-database"></i>
+                    <span>Dataset Manager</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="system-status-box">
+                    <div class="status-row">
+                        <span><span class="status-indicator"></span>AI Classifier</span>
+                        <strong style="color: #34d399;">ONLINE</strong>
+                    </div>
+                    <div class="status-row">
+                        <span>Engine Mode</span>
+                        <span class="mono" style="color: var(--accent-cyan); font-size: 0.7rem;">TF-IDF+LR</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Wrapper -->
+        <div class="main-wrapper">
+            <!-- Top Navbar -->
+            <header class="top-navbar">
+                <div class="page-title-box">
+                    <h1 class="page-title">{% block page_title %}Security Operations Center{% endblock %}</h1>
+                    <span class="page-subtitle">{% block page_subtitle %}Automated Phishing Telemetry & Analysis System{% endblock %}</span>
+                </div>
+
+                <div class="top-nav-actions">
+                    <div class="soc-threat-badge">
+                        <span class="live-pulse"></span>
+                        <span>SOC STATUS: MONITORING</span>
+                    </div>
+
+                    {% if current_user %}
+                    <div class="analyst-profile">
+                        <div class="avatar">
+                            {{ current_user.username[:2].upper() }}
+                        </div>
+                        <div class="analyst-info">
+                            <span class="analyst-name">{{ current_user.username }}</span>
+                            <span class="analyst-role">{{ current_user.role|capitalize }}</span>
+                        </div>
+                        <a href="{{ url_for('logout') }}" class="btn btn-outline btn-sm" title="Sign out" style="margin-left: 8px;">
+                            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </header>
+
+            <!-- Content Body -->
+            <main class="content-body">
+                <!-- Flash Messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert-box alert-{{ category }}">
+                                <span><i class="fa-solid fa-circle-info" style="margin-right: 8px;"></i>{{ message }}</span>
+                                <button type="button" onclick="this.parentElement.remove()" style="background: none; border: none; color: inherit; cursor: pointer; font-size: 1rem;">
+                                    &times;
+                                </button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <!-- Core Scripts -->
+    <script>
+        // Global Chart.js dark theme defaults
+        if (window.Chart) {
+            Chart.defaults.color = '#94a3b8';
+            Chart.defaults.borderColor = '#233044';
+            Chart.defaults.font.family = "'Inter', sans-serif";
+        }
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

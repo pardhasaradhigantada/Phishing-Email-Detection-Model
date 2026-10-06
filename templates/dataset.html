@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block title %}Dataset Management // SentinelMail{% endblock %}
+{% block page_title %}Dataset & Training Corpus Management{% endblock %}
+{% block page_subtitle %}Review Corpus Balance, Inspect Data Rows & Ingest External CSV Datasets{% endblock %}
+
+{% block content %}
+<!-- Dataset Summary Metrics -->
+<div class="stats-grid">
+    <div class="stat-widget cyan">
+        <div class="stat-label">
+            <span>TOTAL RECORDS</span>
+            <i class="fa-solid fa-database" style="color: var(--accent-cyan);"></i>
+        </div>
+        <div class="stat-value">{{ "{:,}".format(total_records) }}</div>
+        <div class="stat-sub">Active training dataset</div>
+    </div>
+
+    <div class="stat-widget danger">
+        <div class="stat-label">
+            <span>PHISHING RECORDS</span>
+            <i class="fa-solid fa-triangle-exclamation" style="color: var(--danger);"></i>
+        </div>
+        <div class="stat-value" style="color: #fca5a5;">{{ "{:,}".format(phishing_count) }}</div>
+        <div class="stat-sub">
+            <span class="badge badge-phishing" style="font-size: 0.68rem; padding: 2px 6px;">
+                {{ "%.1f"|format(phishing_count / total_records * 100) if total_records > 0 else 0 }}% of corpus
+            </span>
+        </div>
+    </div>
+
+    <div class="stat-widget success">
+        <div class="stat-label">
+            <span>SAFE RECORDS</span>
+            <i class="fa-solid fa-shield-check" style="color: var(--success);"></i>
+        </div>
+        <div class="stat-value" style="color: #a7f3d0;">{{ "{:,}".format(safe_count) }}</div>
+        <div class="stat-sub">
+            <span class="badge badge-safe" style="font-size: 0.68rem; padding: 2px 6px;">
+                {{ "%.1f"|format(safe_count / total_records * 100) if total_records > 0 else 0 }}% of corpus
+            </span>
+        </div>
+    </div>
+
+    <div class="stat-widget primary">
+        <div class="stat-label">
+            <span>DATASET BALANCE</span>
+            <i class="fa-solid fa-scale-balanced" style="color: var(--accent-blue);"></i>
+        </div>
+        <div class="stat-value" style="font-size: 1.5rem; color: #93c5fd;">{{ balance_ratio }}</div>
+        <div class="stat-sub">Phishing : Safe Ratio</div>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 340px; gap: 24px; align-items: start;">
+    <!-- Left Column: Dataset Table -->
+    <div class="soc-card">
+        <div class="card-header">
+            <div class="card-header-title">
+                <i class="fa-solid fa-table-list"></i>
+                Dataset Corpus Records
+            </div>
+            <!-- Filter buttons -->
+            <div style="display: flex; gap: 6px;">
+                <a href="{{ url_for('dataset', label='ALL') }}" class="btn {% if query_filter == 'ALL' %}btn-primary{% else %}btn-outline{% endif %} btn-sm">
+                    All ({{ total_records }})
+                </a>
+                <a href="{{ url_for('dataset', label='phishing') }}" class="btn {% if query_filter == 'phishing' %}btn-primary{% else %}btn-outline{% endif %} btn-sm">
+                    Phishing ({{ phishing_count }})
+                </a>
+                <a href="{{ url_for('dataset', label='safe') }}" class="btn {% if query_filter == 'safe' %}btn-primary{% else %}btn-outline{% endif %} btn-sm">
+                    Safe ({{ safe_count }})
+                </a>
+            </div>
+        </div>
+
+        <div class="soc-table-container">
+            <table class="soc-table">
+                <thead>
+                    <tr>
+                        <th style="width: 60px;">ID</th>
+                        <th style="width: 220px;">Email Subject</th>
+                        <th>Email Text Preview</th>
+                        <th style="width: 110px;">Label</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in pagination.items %}
+                    <tr>
+                        <td class="mono" style="font-size: 0.75rem; color: var(--text-dim);">#{{ row.id }}</td>
+                        <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500;">
+                            {{ row.subject or '(No Subject)' }}
+                        </td>
+                        <td style="max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-muted); font-size: 0.8rem;">
+                            {{ row.body_snippet }}
+                        </td>
+                        <td>
+                            {% if row.label == 'phishing' %}
+                                <span class="badge badge-phishing" style="font-size: 0.7rem; padding: 2px 8px;">phishing</span>
+                            {% else %}
+                                <span class="badge badge-safe" style="font-size: 0.7rem; padding: 2px 8px;">safe</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" style="text-align: center; color: var(--text-dim); padding: 40px;">
+                            No dataset records found.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if pagination.pages > 1 %}
+        <div style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--border-color); font-size: 0.82rem;">
+            <span style="color: var(--text-dim);">
+                Page {{ pagination.page }} of {{ pagination.pages }}
+            </span>
+            <div style="display: flex; gap: 6px;">
+                {% if pagination.has_prev %}
+                    <a href="{{ url_for('dataset', page=pagination.prev_num, label=query_filter) }}" class="btn btn-outline btn-sm">
+                        &laquo; Prev
+                    </a>
+                {% endif %}
+                {% if pagination.has_next %}
+                    <a href="{{ url_for('dataset', page=pagination.next_num, label=query_filter) }}" class="btn btn-outline btn-sm">
+                        Next &raquo;
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Right Column: CSV Dataset Upload & Validation (Section 17) -->
+    <div class="soc-card">
+        <div class="card-header">
+            <div class="card-header-title">
+                <i class="fa-solid fa-file-import"></i>
+                Upload CSV Dataset
+            </div>
+        </div>
+        <div class="card-body">
+            <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 14px;">
+                Ingest new labeled email samples to enhance the machine learning classifier.
+            </p>
+
+            <div style="background-color: var(--bg-surface-elevated); padding: 12px; border-radius: var(--radius-sm); border: 1px dashed var(--border-color); margin-bottom: 18px; font-size: 0.75rem;">
+                <div style="color: var(--accent-cyan); font-weight: 600; margin-bottom: 4px;">Expected CSV Schema:</div>
+                <pre class="mono" style="color: #cbd5e1; font-size: 0.72rem; line-height: 1.4;">text,label
+"Your account has been suspended",phishing
+"Meeting tomorrow at 10 AM",safe</pre>
+                <div style="color: var(--text-dim); margin-top: 6px;">
+                    Allowed labels: <code>phishing</code>, <code>safe</code>
+                </div>
+            </div>
+
+            <form method="POST" action="{{ url_for('dataset') }}" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label class="form-label">Select CSV File (.csv)</label>
+                    <input type="file" name="dataset_file" accept=".csv" required class="form-control" style="padding: 8px;">
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">
+                    <i class="fa-solid fa-upload"></i>
+                    Validate & Ingest CSV
+                </button>
+            </form>
+
+            <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border-color);">
+                <div style="font-size: 0.8rem; font-weight: 600; color: #fff; margin-bottom: 8px;">
+                    <i class="fa-solid fa-circle-question" style="color: var(--accent-cyan); margin-right: 6px;"></i>
+                    Validation Rules
+                </div>
+                <ul style="font-size: 0.75rem; color: var(--text-dim); padding-left: 18px; line-height: 1.6;">
+                    <li>Header must contain <code>label</code> and either <code>text</code> or <code>body</code>.</li>
+                    <li>Rows with missing labels or empty text will fail validation.</li>
+                    <li>Labels must strictly be <code>phishing</code> or <code>safe</code>.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

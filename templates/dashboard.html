@@ -1,0 +1,252 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard // SentinelMail SOC{% endblock %}
+{% block page_title %}Security Operations Dashboard{% endblock %}
+{% block page_subtitle %}Live Threat Intelligence & Telemetry Overview{% endblock %}
+
+{% block content %}
+<!-- Statistics Cards Grid (Section 5) -->
+<div class="stats-grid">
+    <div class="stat-widget cyan">
+        <div class="stat-label">
+            <span>TOTAL EMAILS</span>
+            <i class="fa-solid fa-envelope-open-text" style="color: var(--accent-cyan);"></i>
+        </div>
+        <div class="stat-value" id="statTotal">{{ "{:,}".format(total_emails) }}</div>
+        <div class="stat-sub">
+            <i class="fa-solid fa-server"></i> System scan telemetry
+        </div>
+    </div>
+
+    <div class="stat-widget danger">
+        <div class="stat-label">
+            <span>PHISHING DETECTED</span>
+            <i class="fa-solid fa-triangle-exclamation" style="color: var(--danger);"></i>
+        </div>
+        <div class="stat-value" id="statPhishing" style="color: #fca5a5;">{{ "{:,}".format(phishing_count) }}</div>
+        <div class="stat-sub">
+            <span class="badge badge-phishing" style="font-size: 0.68rem; padding: 2px 6px;">
+                {{ detection_rate }}% Threat Rate
+            </span>
+        </div>
+    </div>
+
+    <div class="stat-widget success">
+        <div class="stat-label">
+            <span>SAFE EMAILS</span>
+            <i class="fa-solid fa-circle-check" style="color: var(--success);"></i>
+        </div>
+        <div class="stat-value" id="statSafe" style="color: #a7f3d0;">{{ "{:,}".format(safe_count) }}</div>
+        <div class="stat-sub">
+            <span class="badge badge-safe" style="font-size: 0.68rem; padding: 2px 6px;">Verified Clean</span>
+        </div>
+    </div>
+
+    <div class="stat-widget warning">
+        <div class="stat-label">
+            <span>DETECTION RATE</span>
+            <i class="fa-solid fa-radar" style="color: var(--warning);"></i>
+        </div>
+        <div class="stat-value" id="statRate">{{ detection_rate }}%</div>
+        <div class="stat-sub">
+            <i class="fa-solid fa-chart-line"></i> Ratio of scanned threats
+        </div>
+    </div>
+
+    <div class="stat-widget primary">
+        <div class="stat-label">
+            <span>MODEL ACCURACY</span>
+            <i class="fa-solid fa-bullseye" style="color: var(--accent-blue);"></i>
+        </div>
+        <div class="stat-value" id="statAccuracy" style="color: #93c5fd;">{{ model_accuracy }}%</div>
+        <div class="stat-sub">
+            <i class="fa-solid fa-microchip"></i> Evaluated on test set
+        </div>
+    </div>
+
+    <div class="stat-widget cyan">
+        <div class="stat-label">
+            <span>ANALYZED TODAY</span>
+            <i class="fa-solid fa-calendar-day" style="color: var(--accent-cyan);"></i>
+        </div>
+        <div class="stat-value" id="statToday">{{ "{:,}".format(analyzed_today) }}</div>
+        <div class="stat-sub">
+            <span class="live-pulse" style="display: inline-block; margin-right: 4px;"></span> Active sessions
+        </div>
+    </div>
+</div>
+
+<!-- Primary Security Analytics Charts Grid (Section 6) -->
+<div class="charts-grid">
+    <!-- Chart 1: Phishing Detection Trend -->
+    <div class="soc-card">
+        <div class="card-header">
+            <div class="card-header-title">
+                <i class="fa-solid fa-chart-area"></i>
+                Phishing Detection Trend (Past 7 Days)
+            </div>
+            <span class="chip"><i class="fa-solid fa-rotate"></i> Realtime</span>
+        </div>
+        <div class="card-body">
+            <div class="chart-wrapper">
+                <canvas id="trendChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart 2: Threat Ratio Doughnut -->
+    <div class="soc-card">
+        <div class="card-header">
+            <div class="card-header-title">
+                <i class="fa-solid fa-chart-pie"></i>
+                Safe vs Phishing Ratio
+            </div>
+            <span class="chip">Telemetry</span>
+        </div>
+        <div class="card-body">
+            <div class="chart-wrapper">
+                <canvas id="ratioChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Secondary Analytics Charts Grid -->
+<div class="charts-grid-secondary">
+    <!-- Chart 3: Top Suspicious Keywords Detected -->
+    <div class="soc-card">
+        <div class="card-header">
+            <div class="card-header-title">
+                <i class="fa-solid fa-key"></i>
+                Top Suspicious Keywords Detected
+            </div>
+            <span class="chip">NLP Triggers</span>
+        </div>
+        <div class="card-body">
+            <div class="chart-wrapper">
+                <canvas id="keywordsChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart 4: URL Threat Indicators -->
+    <div class="soc-card">
+        <div class="card-header">
+            <div class="card-header-title">
+                <i class="fa-solid fa-link"></i>
+                Most Common URL Threat Indicators
+            </div>
+            <span class="chip">Static URL Analysis</span>
+        </div>
+        <div class="card-body">
+            <div class="chart-wrapper">
+                <canvas id="urlIndicatorsChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Threat Telemetry Activity Table -->
+<div class="soc-card">
+    <div class="card-header">
+        <div class="card-header-title">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+            Recent Telemetry Detections
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <a href="{{ url_for('analyze') }}" class="btn btn-primary btn-sm">
+                <i class="fa-solid fa-plus"></i> New Scan
+            </a>
+            <a href="{{ url_for('history') }}" class="btn btn-outline btn-sm">
+                View All <i class="fa-solid fa-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+    <div class="soc-table-container">
+        <table class="soc-table">
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Sender</th>
+                    <th>Subject</th>
+                    <th>Verdict</th>
+                    <th>Confidence</th>
+                    <th>Risk Score</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in recent_analyses %}
+                <tr>
+                    <td class="mono" style="font-size: 0.78rem; color: var(--text-dim);">
+                        {{ item.created_at.strftime('%Y-%m-%d %H:%M') }}
+                    </td>
+                    <td style="max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        <span class="mono" style="font-size: 0.8rem; color: #cbd5e1;">{{ item.sender or 'Unknown Sender' }}</span>
+                    </td>
+                    <td style="max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500;">
+                        {{ item.subject or '(No Subject)' }}
+                    </td>
+                    <td>
+                        {% if item.prediction == 'PHISHING' %}
+                            <span class="badge badge-phishing"><i class="fa-solid fa-triangle-exclamation"></i> PHISHING</span>
+                        {% else %}
+                            <span class="badge badge-safe"><i class="fa-solid fa-shield-check"></i> SAFE</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <strong style="color: #fff;">{{ item.confidence }}%</strong>
+                    </td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span class="badge badge-{{ item.risk_level|lower }}" style="font-size: 0.7rem; padding: 2px 6px;">
+                                {{ item.risk_level }} ({{ item.risk_score }}/100)
+                            </span>
+                        </div>
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-outline btn-sm btn-inspect" data-id="{{ item.id }}" style="padding: 4px 8px;">
+                            <i class="fa-regular fa-eye"></i> Inspect
+                        </button>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" style="text-align: center; color: var(--text-dim); padding: 32px;">
+                        No telemetry logs recorded yet. Run your first email analysis to populate data.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Inspection Modal -->
+<div class="modal-backdrop" id="inspectModal">
+    <div class="modal-window">
+        <div class="modal-header">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <i class="fa-solid fa-shield-halved" style="color: var(--accent-cyan);"></i>
+                <h3 style="font-size: 1.05rem; font-weight: 700; color: #fff;" id="modalTitle">Telemetry Record Details</h3>
+            </div>
+            <button type="button" onclick="closeInspectModal()" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.2rem;">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="modal-content-scroll" id="modalContent">
+            <div style="text-align: center; padding: 40px; color: var(--text-dim);">
+                <i class="fa-solid fa-spinner fa-spin" style="font-size: 1.5rem;"></i>
+                <p style="margin-top: 10px;">Loading telemetry details...</p>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="closeInspectModal()">Close</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

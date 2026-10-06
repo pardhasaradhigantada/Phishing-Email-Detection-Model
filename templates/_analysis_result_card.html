@@ -1,0 +1,219 @@
+{% if result %}
+<div class="soc-card" style="margin-bottom: 24px; animation: fadeIn 0.4s ease;">
+    <!-- Large Prediction Result Banner (Section 13) -->
+    <div class="result-banner {% if result.prediction == 'PHISHING' %}phishing{% else %}safe{% endif %}">
+        <div class="result-header">
+            <div class="result-icon-circle">
+                {% if result.prediction == 'PHISHING' %}
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                {% else %}
+                    <i class="fa-solid fa-shield-check"></i>
+                {% endif %}
+            </div>
+            <div>
+                <div style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1.5px; opacity: 0.8; font-weight: 700;">
+                    Automated SOC Assessment
+                </div>
+                <div class="result-title-text">
+                    {% if result.prediction == 'PHISHING' %}
+                        ⚠ PHISHING DETECTED
+                    {% else %}
+                        ✓ SAFE EMAIL
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="result-metrics-row">
+            <div class="metric-pill">
+                <span class="metric-pill-label">ML Confidence</span>
+                <span class="metric-pill-val" style="color: #fff;">{{ result.confidence }}%</span>
+            </div>
+            <div class="metric-pill">
+                <span class="metric-pill-label">Risk Level</span>
+                <span class="metric-pill-val" style="color: {% if result.risk_level == 'CRITICAL' or result.risk_level == 'HIGH' %}#f87171{% elif result.risk_level == 'MEDIUM' %}#fbbf24{% else %}#34d399{% endif %};">
+                    {{ result.risk_level }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card-body">
+        <!-- Separate Risk Score Progress Indicator (Section 15) -->
+        <div style="margin-bottom: 24px; background-color: var(--bg-surface-elevated); padding: 16px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span style="font-size: 0.8rem; font-weight: 700; color: #fff; text-transform: uppercase; letter-spacing: 0.5px;">
+                    <i class="fa-solid fa-gauge-high" style="color: var(--accent-cyan); margin-right: 6px;"></i>
+                    Calculated Threat Risk Score
+                </span>
+                <span style="font-size: 0.95rem; font-weight: 800; color: #fff;">
+                    {{ result.risk_score }} <span style="font-size: 0.75rem; color: var(--text-dim);">/ 100</span>
+                </span>
+            </div>
+            
+            <div class="risk-meter">
+                <div class="risk-fill {{ result.risk_level|lower }}" style="width: {{ result.risk_score }}%;"></div>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-dim); margin-top: 4px;">
+                <span>0-30: LOW</span>
+                <span>31-60: MEDIUM</span>
+                <span>61-80: HIGH</span>
+                <span>81-100: CRITICAL</span>
+            </div>
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 8px; border-top: 1px dashed var(--border-color); padding-top: 6px;">
+                <i class="fa-solid fa-circle-info" style="color: var(--accent-cyan); margin-right: 4px;"></i>
+                <em>ML Confidence reflects text vector alignment, while Risk Score integrates structural & static URL heuristics.</em>
+            </div>
+        </div>
+
+        <!-- Explanation System (Section 14) -->
+        <div style="margin-bottom: 24px;">
+            <div style="font-size: 0.88rem; font-weight: 700; color: #fff; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+                <span>
+                    <i class="fa-solid fa-clipboard-question" style="color: var(--accent-cyan); margin-right: 6px;"></i>
+                    {% if result.prediction == 'PHISHING' %}
+                        Why this email was flagged:
+                    {% else %}
+                        Why this email appears safe:
+                    {% endif %}
+                </span>
+                <span style="font-size: 0.72rem; font-weight: normal; color: var(--text-dim);">Static SOC Heuristics</span>
+            </div>
+            
+            <ul class="explanation-list">
+                {% for reason in result.explanation %}
+                <li class="explanation-item {% if result.prediction == 'PHISHING' %}flagged{% else %}safe-point{% endif %}">
+                    <i class="fa-solid {% if result.prediction == 'PHISHING' %}fa-triangle-exclamation{% else %}fa-circle-check{% endif %}"></i>
+                    <span>{{ reason }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+            <div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 6px;">
+                * Note: Indicators represent static risk factors, not definitive proof of intent.
+            </div>
+        </div>
+
+        <!-- Detected Suspicious Keywords (Section 10) -->
+        <div style="margin-bottom: 24px;">
+            <div style="font-size: 0.85rem; font-weight: 700; color: #fff; margin-bottom: 10px;">
+                <i class="fa-solid fa-key" style="color: var(--warning); margin-right: 6px;"></i>
+                Suspicious Keywords Detected
+            </div>
+            {% if result.detected_keywords and result.detected_keywords|length > 0 %}
+                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                    {% for kw in result.detected_keywords %}
+                    <span class="chip chip-danger" style="font-size: 0.8rem; padding: 4px 10px;">
+                        <i class="fa-solid fa-check" style="color: var(--danger);"></i>
+                        <strong>{{ kw.keyword }}</strong>
+                        <span style="color: var(--text-dim); font-size: 0.7rem;">({{ kw.count }})</span>
+                    </span>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div style="font-size: 0.82rem; color: var(--text-dim); background-color: var(--bg-surface-elevated); padding: 10px; border-radius: var(--radius-sm);">
+                    <i class="fa-solid fa-shield-check" style="color: var(--success); margin-right: 6px;"></i>
+                    No high-risk suspicious trigger keywords identified.
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Static URL Analysis (Section 11) -->
+        <div style="margin-bottom: 24px;">
+            <div style="font-size: 0.85rem; font-weight: 700; color: #fff; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+                <span>
+                    <i class="fa-solid fa-link" style="color: var(--accent-cyan); margin-right: 6px;"></i>
+                    Static URL Analysis
+                </span>
+                <span class="chip" style="font-size: 0.7rem;">No Outbound Requests</span>
+            </div>
+
+            <!-- URL Metrics Row -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; margin-bottom: 14px;">
+                <div style="background-color: var(--bg-surface-elevated); padding: 10px; border-radius: var(--radius-sm); text-align: center;">
+                    <div style="font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase;">URLs Found</div>
+                    <div style="font-size: 1.25rem; font-weight: 800; color: #fff;">{{ result.url_analysis.urls_found }}</div>
+                </div>
+                <div style="background-color: var(--bg-surface-elevated); padding: 10px; border-radius: var(--radius-sm); text-align: center;">
+                    <div style="font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase;">Suspicious</div>
+                    <div style="font-size: 1.25rem; font-weight: 800; color: {% if result.url_analysis.suspicious_urls > 0 %}#f87171{% else %}#fff{% endif %};">
+                        {{ result.url_analysis.suspicious_urls }}
+                    </div>
+                </div>
+                <div style="background-color: var(--bg-surface-elevated); padding: 10px; border-radius: var(--radius-sm); text-align: center;">
+                    <div style="font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase;">HTTPS Secure</div>
+                    <div style="font-size: 1.25rem; font-weight: 800; color: #34d399;">{{ result.url_analysis.https_urls }}</div>
+                </div>
+                <div style="background-color: var(--bg-surface-elevated); padding: 10px; border-radius: var(--radius-sm); text-align: center;">
+                    <div style="font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase;">HTTP Plain</div>
+                    <div style="font-size: 1.25rem; font-weight: 800; color: {% if result.url_analysis.http_urls > 0 %}#fbbf24{% else %}#fff{% endif %};">
+                        {{ result.url_analysis.http_urls }}
+                    </div>
+                </div>
+                <div style="background-color: var(--bg-surface-elevated); padding: 10px; border-radius: var(--radius-sm); text-align: center;">
+                    <div style="font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase;">IP Hosts</div>
+                    <div style="font-size: 1.25rem; font-weight: 800; color: {% if result.url_analysis.ip_based_urls > 0 %}#f87171{% else %}#fff{% endif %};">
+                        {{ result.url_analysis.ip_based_urls }}
+                    </div>
+                </div>
+            </div>
+
+            {% if result.url_analysis.details and result.url_analysis.details|length > 0 %}
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    {% for u in result.url_analysis.details %}
+                    <div style="background-color: var(--bg-surface-elevated); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 10px 12px; font-size: 0.8rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                            <span class="mono" style="color: #38bdf8; word-break: break-all;">{{ u.url }}</span>
+                            {% if u.is_suspicious %}
+                                <span class="badge badge-phishing" style="font-size: 0.65rem;">Flagged</span>
+                            {% else %}
+                                <span class="badge badge-safe" style="font-size: 0.65rem;">Clean</span>
+                            {% endif %}
+                        </div>
+                        <div style="display: flex; gap: 12px; font-size: 0.72rem; color: var(--text-muted); flex-wrap: wrap;">
+                            <span>Protocol: <strong>{% if u.is_https %}HTTPS{% else %}HTTP{% endif %}</strong></span>
+                            {% if u.is_ip %}<span style="color: #f87171;"><strong>• Raw IP Host</strong></span>{% endif %}
+                            {% if u.is_shortener %}<span style="color: #fbbf24;"><strong>• URL Shortener</strong></span>{% endif %}
+                            {% if u.is_long_url %}<span>• Length: {{ u.url_length }} chars</span>{% endif %}
+                            {% if u.has_at_symbol %}<span style="color: #f87171;">• Contains '@' Redirect</span>{% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Structural & Sender Analysis (Section 12) -->
+        <div>
+            <div style="font-size: 0.85rem; font-weight: 700; color: #fff; margin-bottom: 10px;">
+                <i class="fa-solid fa-code-compare" style="color: var(--accent-cyan); margin-right: 6px;"></i>
+                Email Structural & Header Telemetry
+            </div>
+            <div style="background-color: var(--bg-surface-elevated); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 14px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 0.8rem;">
+                    <div>
+                        <span style="color: var(--text-dim);">Sender Domain:</span>
+                        <strong class="mono" style="color: #fff; margin-left: 6px;">{{ result.structural_analysis.sender_domain or 'None' }}</strong>
+                    </div>
+                    <div>
+                        <span style="color: var(--text-dim);">Domain Status:</span>
+                        <span style="margin-left: 6px; color: {% if result.structural_analysis.domain_suspicious %}#f87171{% else %}#34d399{% endif %}; font-weight: 600;">
+                            {{ result.structural_analysis.domain_based_indicators }}
+                        </span>
+                    </div>
+                    <div>
+                        <span style="color: var(--text-dim);">Subject Urgency:</span>
+                        <strong style="margin-left: 6px; color: {% if result.structural_analysis.subject_urgency %}#f87171{% else %}#94a3b8{% endif %};">
+                            {% if result.structural_analysis.subject_urgency %}DETECTED{% else %}Normal{% endif %}
+                        </strong>
+                    </div>
+                    <div>
+                        <span style="color: var(--text-dim);">Word / Sentence:</span>
+                        <strong style="color: #fff; margin-left: 6px;">{{ result.structural_analysis.word_count }} words / {{ result.structural_analysis.sentence_count }} sent.</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}

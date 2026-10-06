@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block title %}Telemetry History // SentinelMail{% endblock %}
+{% block page_title %}Security Telemetry & Analysis History{% endblock %}
+{% block page_subtitle %}Audit trail of inspected emails, ML risk assessments, and forensic artifacts{% endblock %}
+
+{% block content %}
+<div class="soc-card">
+    <div class="card-header">
+        <div class="card-header-title">
+            <i class="fa-solid fa-list-check"></i>
+            Historical Telemetry Logs
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <a href="{{ url_for('export_history') }}" class="btn btn-outline btn-sm">
+                <i class="fa-solid fa-file-arrow-down"></i> Export CSV
+            </a>
+            <a href="{{ url_for('analyze') }}" class="btn btn-primary btn-sm">
+                <i class="fa-solid fa-plus"></i> New Scan
+            </a>
+        </div>
+    </div>
+
+    <!-- Filters Bar -->
+    <div style="padding: 16px 20px; background-color: rgba(10, 14, 23, 0.3); border-bottom: 1px solid var(--border-color);">
+        <form method="GET" action="{{ url_for('history') }}" style="display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end;">
+            <div style="flex: 1; min-width: 220px;">
+                <label class="form-label" style="font-size: 0.72rem;">Search Sender, Subject, Body</label>
+                <div style="position: relative;">
+                    <input type="text" name="q" class="form-control" placeholder="Search keywords..." value="{{ query_text }}">
+                </div>
+            </div>
+
+            <div style="width: 140px;">
+                <label class="form-label" style="font-size: 0.72rem;">Verdict</label>
+                <select name="status" class="form-control">
+                    <option value="ALL" {% if filter_status == 'ALL' %}selected{% endif %}>All Verdicts</option>
+                    <option value="PHISHING" {% if filter_status == 'PHISHING' %}selected{% endif %}>Phishing Only</option>
+                    <option value="SAFE" {% if filter_status == 'SAFE' %}selected{% endif %}>Safe Only</option>
+                </select>
+            </div>
+
+            <div style="width: 140px;">
+                <label class="form-label" style="font-size: 0.72rem;">Risk Level</label>
+                <select name="risk" class="form-control">
+                    <option value="ALL" {% if filter_risk == 'ALL' %}selected{% endif %}>All Levels</option>
+                    <option value="LOW" {% if filter_risk == 'LOW' %}selected{% endif %}>Low (0-30)</option>
+                    <option value="MEDIUM" {% if filter_risk == 'MEDIUM' %}selected{% endif %}>Medium (31-60)</option>
+                    <option value="HIGH" {% if filter_risk == 'HIGH' %}selected{% endif %}>High (61-80)</option>
+                    <option value="CRITICAL" {% if filter_risk == 'CRITICAL' %}selected{% endif %}>Critical (81-100)</option>
+                </select>
+            </div>
+
+            <div>
+                <button type="submit" class="btn btn-primary btn-sm" style="padding: 10px 16px;">
+                    <i class="fa-solid fa-filter"></i> Filter
+                </button>
+                <a href="{{ url_for('history') }}" class="btn btn-secondary btn-sm" style="padding: 10px 14px;">
+                    Reset
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Telemetry Table -->
+    <div class="soc-table-container">
+        <table class="soc-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Date / Time</th>
+                    <th>Sender</th>
+                    <th>Subject</th>
+                    <th>Prediction</th>
+                    <th>Confidence</th>
+                    <th>Risk Assessment</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in pagination.items %}
+                <tr>
+                    <td class="mono" style="font-size: 0.75rem; color: var(--text-dim);">#{{ item.id }}</td>
+                    <td class="mono" style="font-size: 0.78rem; color: var(--text-dim); white-space: nowrap;">
+                        {{ item.created_at.strftime('%Y-%m-%d %H:%M') }}
+                    </td>
+                    <td style="max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        <span class="mono" style="font-size: 0.8rem; color: #cbd5e1;">{{ item.sender or 'Unknown' }}</span>
+                    </td>
+                    <td style="max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500;">
+                        {{ item.subject or '(No Subject)' }}
+                    </td>
+                    <td>
+                        {% if item.prediction == 'PHISHING' %}
+                            <span class="badge badge-phishing"><i class="fa-solid fa-triangle-exclamation"></i> PHISHING</span>
+                        {% else %}
+                            <span class="badge badge-safe"><i class="fa-solid fa-shield-check"></i> SAFE</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <strong style="color: #fff;">{{ item.confidence }}%</strong>
+                    </td>
+                    <td>
+                        <span class="badge badge-{{ item.risk_level|lower }}" style="font-size: 0.72rem;">
+                            {{ item.risk_level }} ({{ item.risk_score }}/100)
+                        </span>
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-outline btn-sm btn-inspect-history" data-id="{{ item.id }}" style="padding: 4px 8px;">
+                            <i class="fa-regular fa-eye"></i> Details
+                        </button>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" style="text-align: center; color: var(--text-dim); padding: 48px;">
+                        No telemetry records match the selected filter criteria.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination Controls -->
+    {% if pagination.pages > 1 %}
+    <div style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--border-color); font-size: 0.82rem;">
+        <span style="color: var(--text-dim);">
+            Showing page {{ pagination.page }} of {{ pagination.pages }} ({{ pagination.total }} records)
+        </span>
+        <div style="display: flex; gap: 6px;">
+            {% if pagination.has_prev %}
+                <a href="{{ url_for('history', page=pagination.prev_num, status=filter_status, risk=filter_risk, q=query_text) }}" class="btn btn-outline btn-sm">
+                    &laquo; Previous
+                </a>
+            {% endif %}
+            
+            {% for p in pagination.iter_pages(left_edge=2, right_edge=2, left_current=2, right_current=2) %}
+                {% if p %}
+                    {% if p == pagination.page %}
+                        <span class="btn btn-primary btn-sm" style="pointer-events: none;">{{ p }}</span>
+                    {% else %}
+                        <a href="{{ url_for('history', page=p, status=filter_status, risk=filter_risk, q=query_text) }}" class="btn btn-outline btn-sm">
+                            {{ p }}
+                        </a>
+                    {% endif %}
+                {% else %}
+                    <span style="padding: 6px 10px; color: var(--text-dim);">...</span>
+                {% endif %}
+            {% endfor %}
+
+            {% if pagination.has_next %}
+                <a href="{{ url_for('history', page=pagination.next_num, status=filter_status, risk=filter_risk, q=query_text) }}" class="btn btn-outline btn-sm">
+                    Next &raquo;
+                </a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- History Detail Modal -->
+<div class="modal-backdrop" id="inspectModal">
+    <div class="modal-window">
+        <div class="modal-header">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <i class="fa-solid fa-shield-halved" style="color: var(--accent-cyan);"></i>
+                <h3 style="font-size: 1.05rem; font-weight: 700; color: #fff;" id="modalTitle">Telemetry Record Details</h3>
+            </div>
+            <button type="button" onclick="closeInspectModal()" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.2rem;">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="modal-content-scroll" id="modalContent">
+            <!-- Dynamically populated -->
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="closeInspectModal()">Close</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/history.js') }}"></script>
+{% endblock %}
